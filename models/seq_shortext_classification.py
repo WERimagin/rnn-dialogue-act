@@ -343,7 +343,8 @@ class SeqShortextClassifcation(object):
         [self.train_op, self.global_step, self.train_summary_op, self.loss, self.accuracy],
         feed_dict)
       time_str = datetime.now().isoformat()
-      print("New {}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+      if step%self.print_result==0:
+          print("New {}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
       self.train_summary_writer.add_summary(summaries, step)
 
   def dev_step(self, x_batch, y_batch, x_sequence_lenght_batch, writer=None):

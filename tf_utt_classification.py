@@ -73,6 +73,8 @@ def main():
   X_dev = pad_sequences(X_dev, padding='post', truncating='post', maxlen=max_utterance_in_session)
   y_train = pad_sequences(y_train_one_hot, padding='post', truncating='post', maxlen=max_utterance_in_session)
   y_dev = pad_sequences(y_dev_one_hot, padding='post', truncating='post', maxlen=max_utterance_in_session)
+  print(len(X_train))
+  print(X_train[0])
 
   #モデル
   model = SeqShortextClassifcation()
