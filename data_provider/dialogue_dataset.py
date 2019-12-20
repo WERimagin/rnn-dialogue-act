@@ -130,7 +130,8 @@ class SwDA(DialogueDataset):
     return l_dialogue_text, l_dialogue_act_tags
 
 if __name__ == "__main__":
-  dataset = MaluubaDataset()
+  #dataset = MaluubaDataset()
+  dataset=SwDA()
   train_ids, _, _ = dataset.split_data_to_train()
   x, y = dataset.get_dialogue_data(train_ids)
   x_flat = dataset.flat_dialogue(x)
