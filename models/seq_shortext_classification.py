@@ -70,7 +70,7 @@ class SeqShortextClassifcation(object):
     self.saver = None
 
     self.num_hiden_units = 100
-    self.max_utterance_in_session = 536
+    self.max_utterance_in_session = 536 #会話の文数
     self.max_word_in_utterance = 200 #一文の中の最大単語数(足りない分はpadding?)
     self.num_classes = 43
     self.embedding_size = 100
@@ -86,7 +86,7 @@ class SeqShortextClassifcation(object):
     self.num_epochs = 40
     self.checkpoint_every = 100
     self.gpu_id=[2,3]
-    self.print_result=50
+    self.print_result=20
 
     self.build_model()
 
@@ -168,7 +168,6 @@ class SeqShortextClassifcation(object):
     # shape [batch * max_utterance_in_session, num_utterance_filters_total]
     #self.utterance_vector = tf.reshape(utterance_vector, [-1, num_utterance_filters_total])
     self.utterance_vector_group_by_sess = tf.reshape(utterance_vector, [-1, self.max_utterance_in_session, self.num_utterance_filters_total])
-    print(utterance_vector.get_shape())
 
   #前の発言を見て纏める
   def add_disclosure_model(self):
@@ -201,17 +200,19 @@ class SeqShortextClassifcation(object):
       sess_mat_minus1 = tf.map_fn(lambda chat_sess: tf_shift_utts_in_session(chat_sess, num_shift_row=1, max_utterance_in_session=self.max_utterance_in_session),
                                   self.utterance_vector_group_by_sess)
 
+      #それぞれの文の一個前と二個前の文の分散表現？
       sess_mat_minus2_flat = tf.reshape(sess_mat_minus2, [-1, utterance_vector_length])
       sess_mat_minus1_flat = tf.reshape(sess_mat_minus1, [-1, utterance_vector_length])
       sess_mat_flat = tf.reshape(self.utterance_vector_group_by_sess, [-1, utterance_vector_length])
 
-
+      #それぞれの文をdenseし、和を取ってtanh
       layer1_mat_minus_2 = tf.matmul(sess_mat_minus2_flat, layer1_W_minus_2)
       layer1_mat_minus_1 = tf.matmul(sess_mat_minus1_flat, layer1_W_minus_1)
       layer1_mat_mul = tf.matmul(sess_mat_flat, layer1_W)
       y_layer1 = tf.tanh(layer1_mat_minus_2 + layer1_mat_minus_1 + layer1_mat_mul + layer1_b)
 
       # layer 2
+      #-2を変形
       y_layer1_reshape = tf.reshape(layer1_mat_minus_2, [-1, self.max_utterance_in_session, self.num_classes])
 
       layer2_sess_mat_minus2 = tf.map_fn(lambda chat_sess: tf_shift_utts_in_session(chat_sess, num_shift_row=2, max_utterance_in_session=self.max_utterance_in_session),
@@ -219,10 +220,12 @@ class SeqShortextClassifcation(object):
       layer2_sess_mat_minus1 = tf.map_fn(lambda chat_sess: tf_shift_utts_in_session(chat_sess, num_shift_row=1, max_utterance_in_session=self.max_utterance_in_session),
                                          y_layer1_reshape)
 
+      #-2,-1,y(layer1で-2,-1,0を足したもの)
       layer2_sess_mat_minus2_flat = tf.reshape(layer2_sess_mat_minus2, [-1, self.num_classes])
       layer2_sess_mat_minus1_flat = tf.reshape(layer2_sess_mat_minus1, [-1, self.num_classes])
       layer2_sess_mat_flat = y_layer1
 
+      #この三つを足したものが予測
       layer2_mat_minus_2 = tf.matmul(layer2_sess_mat_minus2_flat, layer2_W_minus_2)
       layer2_mat_minus_1 = tf.matmul(layer2_sess_mat_minus1_flat, layer2_W_minus_1)
       layer2_mat_mul = tf.matmul(layer2_sess_mat_flat, layer2_W)
