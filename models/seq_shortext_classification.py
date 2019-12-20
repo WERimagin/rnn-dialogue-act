@@ -168,6 +168,7 @@ class SeqShortextClassifcation(object):
     # shape [batch * max_utterance_in_session, num_utterance_filters_total]
     #self.utterance_vector = tf.reshape(utterance_vector, [-1, num_utterance_filters_total])
     self.utterance_vector_group_by_sess = tf.reshape(utterance_vector, [-1, self.max_utterance_in_session, self.num_utterance_filters_total])
+    print(utterance_vector.get_shape())
 
   #前の発言を見て纏める
   def add_disclosure_model(self):
@@ -334,7 +335,7 @@ class SeqShortextClassifcation(object):
         feed_dict)
       time_str = datetime.now().isoformat()
       #結果出力
-      if time_str%self.print_result==0:
+      if step%self.print_result==0:
           print("{}: step {}, loss {:g}".format(time_str, step, loss))
       self.train_summary_writer.add_summary(summaries, step)
     else:
