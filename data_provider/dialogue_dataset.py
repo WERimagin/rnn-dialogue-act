@@ -113,7 +113,6 @@ class SwDA(DialogueDataset):
   def __parse_id(self, sw_session_string):
     return int(sw_session_string[2:])
 
-
   def split_data_to_train(self):
     return self.train_set_idx, self.valid_set_idx, self.test_set_idx
 

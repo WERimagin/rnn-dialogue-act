@@ -4,6 +4,7 @@ from keras.preprocessing.text import Tokenizer
 
 from data_provider import dialogue_dataset
 from models.seq_shortext_classification import SeqShortextClassifcation
+import sys
 
 
 DATASET_NAME = 'Switchboard'
@@ -74,7 +75,9 @@ def main():
   X_dev = pad_sequences(X_dev, padding='post', truncating='post', maxlen=max_utterance_in_session)
   y_train = pad_sequences(y_train_one_hot, padding='post', truncating='post', maxlen=max_utterance_in_session)
   y_dev = pad_sequences(y_dev_one_hot, padding='post', truncating='post', maxlen=max_utterance_in_session)
-
+  print(len(X_train))
+  print(len(X_dev))
+  sys.exit()
   #モデル
   model = SeqShortextClassifcation()
   train = (X_train, y_train, x_train_dialogue_len)
