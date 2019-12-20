@@ -244,7 +244,14 @@ class SeqShortextClassifcation(object):
 
   def initialize_session(self):
     print("Initializing tf session")
-    self.sess = tf.Session()
+    #gpuを指定
+    config = tf.ConfigProto(
+        gpu_options=tf.GPUOptions(
+            visible_device_list="2,3", # specify GPU number
+            allow_growth=True
+        )
+    )
+    self.sess = tf.Session(config=config)
     self.sess.run(tf.global_variables_initializer())
     self.sess.run(tf.local_variables_initializer())
     self.saver = tf.train.Saver(max_to_keep=self.num_checkpoint)
@@ -381,7 +388,3 @@ class SeqShortextClassifcation(object):
       if current_step % self.checkpoint_every == 0:
         path = self.saver.save(self.sess, self.checkpoint_prefix, global_step=current_step)
         print("Saved model checkpoint to {}\n".format(path))
-
-
-
-
