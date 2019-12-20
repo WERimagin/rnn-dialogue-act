@@ -3,8 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 import re
-from SwDA_config import SwDA_config
-from Maluuba_config import Maluuba_config
+from .SwDA_config import SwDA_config
+from .Maluuba_config import Maluuba_config
 
 SWITCHBOARD_DATA_PATH = '../data/SwDA.csv'
 MALUUBA_DATA_PATH = '../data/maluuba.csv'

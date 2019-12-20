@@ -29,51 +29,59 @@ class Config(object):
 
 def main():
   # LOAD DATA
+  #データのロード
   print('Load data')
   config = Config(DATASET_NAME)
   dataset = dialogue_dataset.get_dataset(DATASET_NAME)
 
+  #configからidを与え、対応するデータを持ってくる
   x_train, y_train = dataset.get_dialogue_data(config.train_ids) # list[list], list[list]
   x_test, y_test = dataset.get_dialogue_data(config.test_ids)
   x_dev, y_dev = dataset.get_dialogue_data(config.valid_ids)
 
   # Store dialouge lenght
+  #長さを確認
   x_train_dialogue_len = dataset.get_dialogues_length(x_train)
   x_test_dialogue_len = dataset.get_dialogues_length(x_test)
   x_dev_dialogue_len = dataset.get_dialogues_length(x_dev)
 
+  #transcriptをutteranceでflat?
   x_train_flat = dataset.flat_dialogue(x_train)
   x_dev_flat = dataset.flat_dialogue(x_dev)
 
+  #kerasのトークナイザーで分割
   tokenizer = Tokenizer(num_words=num_vocabs)
   tokenizer.fit_on_texts(x_train_flat)
   X_train_flat = tokenizer.texts_to_sequences(x_train_flat)
   X_dev_flat = tokenizer.texts_to_sequences(x_dev_flat)
 
+  #diagloeu(transcript)ごとにグルーピング
   X_train = dataset.group_utterance_to_dialogue(X_train_flat, x_train_dialogue_len)
   X_dev = dataset.group_utterance_to_dialogue(X_dev_flat, x_dev_dialogue_len)
 
+  #kerasの何か、クラスを指定？
   y_train_one_hot = [to_categorical(y_session, num_classes=43) for y_session in y_train]
   y_dev_one_hot = [to_categorical(y_session, num_classes=43) for y_session in y_dev]
 
+  #paddingに見える
   X_train = [pad_sequences(session, padding='post', truncating='post', maxlen=max_word_in_utterance) for session in X_train]
   X_dev = [pad_sequences(session, padding='post', truncating='post',  maxlen=max_word_in_utterance) for session in X_dev]
 
-
+  #padding2?
   ## padding utterance in session
   X_train = pad_sequences(X_train,  padding='post', truncating='post', maxlen=max_utterance_in_session)
   X_dev = pad_sequences(X_dev, padding='post', truncating='post', maxlen=max_utterance_in_session)
   y_train = pad_sequences(y_train_one_hot, padding='post', truncating='post', maxlen=max_utterance_in_session)
   y_dev = pad_sequences(y_dev_one_hot, padding='post', truncating='post', maxlen=max_utterance_in_session)
 
-
+  #モデル
   model = SeqShortextClassifcation()
   train = (X_train, y_train, x_train_dialogue_len)
   dev = (X_dev, y_dev, x_dev_dialogue_len)
+
+  #実行
   model.train(train, dev)
 
 
 if __name__ == '__main__':
   main()
-
-
