@@ -68,13 +68,12 @@ def main():
   X_dev = [pad_sequences(session, padding='post', truncating='post',  maxlen=max_word_in_utterance) for session in X_dev]
 
   #padding2?
+  #dialogue_size(1003)*文の数*単語の数
   ## padding utterance in session
   X_train = pad_sequences(X_train,  padding='post', truncating='post', maxlen=max_utterance_in_session)
   X_dev = pad_sequences(X_dev, padding='post', truncating='post', maxlen=max_utterance_in_session)
   y_train = pad_sequences(y_train_one_hot, padding='post', truncating='post', maxlen=max_utterance_in_session)
   y_dev = pad_sequences(y_dev_one_hot, padding='post', truncating='post', maxlen=max_utterance_in_session)
-  print(len(X_train))
-  print(X_train[0])
 
   #モデル
   model = SeqShortextClassifcation()
