@@ -404,7 +404,9 @@ class SeqShortextClassifcation(object):
     #バッチごとに訓練、エポックも指定しており、自動
     for batch in batches:
       x_batch, y_batch, x_sequence_lenght_batch = zip(*batch)
-      print(x_batch.shape,y_batch.shape)
+      print(len(x_batch))
+      print(len(x_batch[0]))
+      print(len(x_batch[0][0]))
       self.train_step(x_batch, y_batch, x_sequence_lenght_batch)
       current_step = tf.train.global_step(self.sess, self.global_step)
       if dev:
