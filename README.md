@@ -1,4 +1,6 @@
-This is my implementation of paper "Sequential Short-Text Classification with Recurrent and Convolutional Neural Networks" in context of Dialogue act tagging classification.
+## Notice
+This is copy of https://github.com/strnam/sequential_short_text_classification
+
 
 ## References
 
