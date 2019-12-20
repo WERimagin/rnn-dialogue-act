@@ -268,8 +268,8 @@ class SeqShortextClassifcation(object):
             allow_growth=True
         )
     )
-    #self.sess = tf.Session(config=config)
-    self.sess = tf.Session()
+    self.sess = tf.Session(config=config)
+    #self.sess = tf.Session()
     self.sess.run(tf.global_variables_initializer())
     self.sess.run(tf.local_variables_initializer())
     self.saver = tf.train.Saver(max_to_keep=self.num_checkpoint)
