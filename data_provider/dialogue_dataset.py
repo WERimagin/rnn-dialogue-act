@@ -126,6 +126,7 @@ class SwDA(DialogueDataset):
 
       l_dialogue_text.append(dialogue_clean)
       l_dialogue_act_tags.append(dialogue_act_tags)
+    print(np.sum([len(d) for d in l_dialogue_text]))
     return l_dialogue_text, l_dialogue_act_tags
 
 if __name__ == "__main__":
