@@ -326,7 +326,7 @@ class SeqShortextClassifcation(object):
     }
 
     if self.use_crf:
-    　#step数、ロスを返す
+      #step数、ロスを返す
       #feed_dict:入力、辞書で与える
       _, step, summaries, loss = self.sess.run(
         [self.train_op, self.global_step, self.train_summary_op, self.loss],
