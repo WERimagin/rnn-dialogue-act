@@ -85,7 +85,7 @@ class SeqShortextClassifcation(object):
     self.batch_size = 8
     self.num_epochs = 40
     self.checkpoint_every = 100
-    self.gpu_id=[2,3,4]
+    self.gpu_id=[2,3]
     self.print_result=50
 
     self.build_model()
