@@ -63,7 +63,7 @@ def tf_shift_utts_in_session(sessions, num_shift_row=2, max_utterance_in_session
   zero_head_session = tf.gather(zero_tail_session, new_indices)
   return zero_head_session
 
-
+#モデル本体
 class SeqShortextClassifcation(object):
   def __init__(self):
     self.sess = None
@@ -71,7 +71,7 @@ class SeqShortextClassifcation(object):
 
     self.num_hiden_units = 100
     self.max_utterance_in_session = 536
-    self.max_word_in_utterance = 200
+    self.max_word_in_utterance = 200 #一文の中の最大単語数(足りない分はpadding?)
     self.num_classes = 43
     self.embedding_size = 100
     self.vocab_size = 10000
@@ -85,9 +85,13 @@ class SeqShortextClassifcation(object):
     self.batch_size = 8
     self.num_epochs = 40
     self.checkpoint_every = 100
+    self.gpu_id=[2,3,4]
+    self.print_result=50
+
     self.build_model()
 
-
+  #モデル生成
+  #これが順番に実行されるはず。
   def build_model(self):
     self.add_input()
     self.add_embedding()
@@ -105,15 +109,16 @@ class SeqShortextClassifcation(object):
       self.grads_and_vars = optimizer.compute_gradients(self.loss)
       self.train_op = optimizer.apply_gradients(self.grads_and_vars, global_step=self.global_step)
 
-
+  #入力をplaceholderで形式を定義
   def add_input(self):
     # Init Variable
     self.input_x = tf.placeholder(tf.int32, shape=[None, self.max_utterance_in_session, self.max_word_in_utterance], name="input_x_raw")
     self.input_y = tf.placeholder(tf.float32, [None, self.max_utterance_in_session, self.num_classes], name="input_y")
     self.session_lengths = tf.placeholder(tf.int32, [None], name="session_lenght")
+    #xをbatch_size*word_sizeに変換
     self.word_ids = tf.reshape(self.input_x, [-1, self.max_word_in_utterance])
 
-
+  #文をembeddingに変換
   def add_embedding(self):
     # Word Embedding layer
     with tf.device('/cpu:0'), tf.name_scope("embedding"):
@@ -123,15 +128,18 @@ class SeqShortextClassifcation(object):
       self.word_embedding = tf.expand_dims(self.word_embedding, -1)
       print("embedding re-dim: ", self.word_embedding.get_shape())
 
-
+  #発言から文ベクトル変換
   def add_utterance_model(self):
     # Utterance representation
+    #フィルターごとの出力を格納
     applied_conv_on_sentence_outputs = []
+    #フィルターサイズ分
     for i, filter_size in enumerate(self.utterance_filter_sizes):
       with tf.name_scope('utterance-conv-maxpool-%s' % filter_size):
         filter_shape = [filter_size, self.embedding_size, 1, self.utterance_num_filter]
         W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
         b = tf.Variable(tf.constant(0.1, shape=[self.utterance_num_filter]), name="b")
+        #convolution
         conv = tf.nn.conv2d(
           self.word_embedding,
           W,
@@ -140,8 +148,10 @@ class SeqShortextClassifcation(object):
           name="conv")
         # Apply nonlinearity
         print(conv.get_shape())
+        #relu
         h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
         #Maxpooling over the outputs.
+        #max_pool
         pooled = tf.nn.max_pool(
           h,
           ksize=[1, self.max_word_in_utterance - filter_size + 1, 1, 1],
@@ -152,11 +162,14 @@ class SeqShortextClassifcation(object):
         applied_conv_on_sentence_outputs.append(pooled)
 
     self.num_utterance_filters_total = self.utterance_num_filter*len(self.utterance_filter_sizes)
+
+    #フィルターごとのをconcat
     utterance_vector = tf.concat(applied_conv_on_sentence_outputs, 3)
     # shape [batch * max_utterance_in_session, num_utterance_filters_total]
     #self.utterance_vector = tf.reshape(utterance_vector, [-1, num_utterance_filters_total])
     self.utterance_vector_group_by_sess = tf.reshape(utterance_vector, [-1, self.max_utterance_in_session, self.num_utterance_filters_total])
 
+  #前の発言を見て纏める
   def add_disclosure_model(self):
     utterance_vector_length = self.num_utterance_filters_total
     with tf.name_scope("Classification"):
@@ -179,6 +192,8 @@ class SeqShortextClassifcation(object):
                           initializer=tf.contrib.layers.xavier_initializer())
       layer2_b = tf.get_variable("layer2_b", shape=[self.num_classes], dtype=tf.float32, initializer=tf.zeros_initializer())
 
+      #????
+      #この後にlayerしてるはず？
       num_sess = self.input_x.shape[0]
       sess_mat_minus2 = tf.map_fn(lambda chat_sess: tf_shift_utts_in_session(chat_sess, num_shift_row=2, max_utterance_in_session=self.max_utterance_in_session),
                                   self.utterance_vector_group_by_sess)
@@ -247,7 +262,8 @@ class SeqShortextClassifcation(object):
     #gpuを指定
     config = tf.ConfigProto(
         gpu_options=tf.GPUOptions(
-            visible_device_list="2,3", # specify GPU number
+            #visible_device_list="2,3", # specify GPU number
+            visible_device_list=",".join([str(g_id) for g_id in self.gpu_id]), # specify GPU number
             allow_growth=True
         )
     )
@@ -297,10 +313,12 @@ class SeqShortextClassifcation(object):
     if not os.path.exists(checkpoint_dir):
       os.makedirs(checkpoint_dir)
 
+  #trainの1ステップ
   def train_step(self, x_batch, y_batch, x_sequence_lenght_batch):
     """
     A single training step
     """
+    #入力
     feed_dict = {
       self.input_x: x_batch,
       self.input_y: y_batch,
@@ -308,11 +326,15 @@ class SeqShortextClassifcation(object):
     }
 
     if self.use_crf:
+    　#step数、ロスを返す
+      #feed_dict:入力、辞書で与える
       _, step, summaries, loss = self.sess.run(
         [self.train_op, self.global_step, self.train_summary_op, self.loss],
         feed_dict)
       time_str = datetime.now().isoformat()
-      print("{}: step {}, loss {:g}".format(time_str, step, loss))
+      #結果出力
+      if time_str%self.print_result==0:
+          print("{}: step {}, loss {:g}".format(time_str, step, loss))
       self.train_summary_writer.add_summary(summaries, step)
     else:
       _, step, summaries, loss, accuracy = self.sess.run(
@@ -367,6 +389,7 @@ class SeqShortextClassifcation(object):
     time_str = datetime.now().isoformat()
     return pred, score
 
+  #訓練
   def train(self, train, dev=None):
     x_train, y_train, x_seq_len_train = train
     if dev:
@@ -375,11 +398,13 @@ class SeqShortextClassifcation(object):
 
     self.add_summary()  # tensorboard
     # Training loop. For each batch...
+    #バッチごとに訓練、エポックも指定しており、自動
     for batch in batches:
       x_batch, y_batch, x_sequence_lenght_batch = zip(*batch)
       self.train_step(x_batch, y_batch, x_sequence_lenght_batch)
       current_step = tf.train.global_step(self.sess, self.global_step)
       if dev:
+        #evaluate_every(100)ごとにテスト
         if current_step % self.evaluate_every == 0:
           print("\nEvaluation:")
           self.dev_step(x_dev, y_dev, x_seq_len_dev, writer=self.dev_summary_writer)
