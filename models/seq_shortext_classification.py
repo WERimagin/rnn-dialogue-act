@@ -85,7 +85,7 @@ class SeqShortextClassifcation(object):
     self.batch_size = 8
     self.num_epochs = 40
     self.checkpoint_every = 100
-    self.gpu_id=[2,3]
+    self.gpu_id=[2,3,4,5]
     self.print_result=20
 
     self.build_model()
@@ -348,6 +348,8 @@ class SeqShortextClassifcation(object):
       time_str = datetime.now().isoformat()
       if step%self.print_result==0:
           print("New {}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+          with open("save_eval.txt","a")as f:
+              f.write("New {}: step {}, loss {:g}, acc {:g}\n".format(time_str, step, loss, accuracy))
       self.train_summary_writer.add_summary(summaries, step)
 
   def dev_step(self, x_batch, y_batch, x_sequence_lenght_batch, writer=None):
