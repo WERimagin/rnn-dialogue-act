@@ -376,12 +376,16 @@ class SeqShortextClassifcation(object):
       y_batch_label = np.argmax(y_batch, axis=2)
       acc = compute_dialogue_act_acc(y_batch_label, viterbi_sequences, x_sequence_lenght_batch)
       print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, acc))
+      with open("save_eval.txt","a")as f:
+          f.write("{}: step {}, loss {:g}, acc {:g} \n".format(time_str, step, loss, acc))
     else:
       step, summaries, loss, accuracy = self.sess.run(
         [self.global_step, self.dev_summary_op, self.loss, self.accuracy],
         feed_dict)
       time_str = datetime.now().isoformat()
       print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+      with open("save_eval.txt","a")as f:
+          f.write("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
 
     if writer:
       writer.add_summary(summaries, step)
